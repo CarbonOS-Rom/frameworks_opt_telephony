@@ -3673,6 +3673,12 @@ public class SatelliteController extends Handler {
      */
     @SatelliteManager.SatelliteResult public int registerForSatelliteModemStateChanged(
             @NonNull ISatelliteModemStateCallback callback) {
+        if (!mSatelliteModemInterface.isSatelliteServiceSupported()) {
+            return SATELLITE_RESULT_REQUEST_NOT_SUPPORTED;
+        }
+        if (Boolean.FALSE.equals(getIsSatelliteSupported())) {
+            return SatelliteManager.SATELLITE_RESULT_NOT_SUPPORTED;
+        }
         plogd("registerForSatelliteModemStateChanged: add Listeners for ModemState");
         mSatelliteRegistrationFailureListeners.put(callback.asBinder(), callback);
         mTerrestrialNetworkAvailableChangedListeners.put(callback.asBinder(), callback);
@@ -5042,15 +5048,15 @@ public class SatelliteController extends Handler {
         }
 
         int subId = phone.getSubId();
+        if (!isSatelliteSupportedViaCarrier(subId)) {
+            return false;
+        }
+
         int connectType = getCarrierRoamingNtnConnectType(subId);
         if (connectType == CARRIER_ROAMING_NTN_CONNECT_MANUAL
                 || (mFeatureFlags.vzwAstSkyloFallback()
                         && connectType == CARRIER_ROAMING_NTN_CONNECT_HYBRID)) {
             return isInCarrierRoamingNbIotNtn(phone);
-        }
-
-        if (!isSatelliteSupportedViaCarrier(subId)) {
-            return false;
         }
 
         ServiceState serviceState = phone.getServiceState();
